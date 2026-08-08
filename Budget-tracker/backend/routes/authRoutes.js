@@ -8,7 +8,7 @@ import {
   getAllUsers,
   updateUser,
 } from "../models/userModel.js";
-import verifyToken from "../middleware/authMiddleware.js";
+import verifyToken from "../middlewares/authMiddleware.js";
 
 const router = express.Router();
 

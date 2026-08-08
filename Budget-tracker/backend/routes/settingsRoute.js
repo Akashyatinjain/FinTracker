@@ -12,7 +12,7 @@ const router = express.Router();
 // GET /api/users/me - Get current user data
 router.get('/me', verifyToken, async (req, res, next) => {
   try {
-    const userId = req.user.user_id;
+    const userId = req.user?.user_id ?? req.user?.id;
     const result = await pool.query(`
       SELECT 
         user_id,
@@ -48,7 +48,7 @@ router.get('/me', verifyToken, async (req, res, next) => {
 // PUT /api/users/profile - Update user profile
 router.put('/profile', verifyToken, async (req, res, next) => {
   try {
-    const userId = req.user.user_id;
+    const userId = req.user?.user_id ?? req.user?.id;
     const { first_name, last_name, phone, currency, language, timezone, avatar_url, avatar, profile_picture } = req.body;
 
     const result = await pool.query(`
@@ -82,7 +82,7 @@ router.put('/profile', verifyToken, async (req, res, next) => {
 // PUT /api/users/password - Change password
 router.put('/password', verifyToken, async (req, res, next) => {
   try {
-    const userId = req.user.user_id;
+    const userId = req.user?.user_id ?? req.user?.id;
     const { current_password, new_password } = req.body;
 
     // First, check if the passwords are provided
@@ -129,10 +129,31 @@ router.put('/password', verifyToken, async (req, res, next) => {
   }
 });
 
+// POST /api/users/change-password - Change password alias
+router.post('/change-password', verifyToken, async (req, res, next) => {
+  try {
+    const userId = req.user?.user_id ?? req.user?.id;
+    const { current_password, new_password } = req.body;
+    if (!current_password || !new_password) {
+      return res.status(400).json({ error: 'Both current and new password are required' });
+    }
+    const userResult = await pool.query('SELECT password_hash FROM users WHERE user_id = $1', [userId]);
+    if (userResult.rowCount === 0) return res.status(404).json({ error: 'User not found' });
+    const validPassword = await bcrypt.compare(current_password, userResult.rows[0].password_hash);
+    if (!validPassword) return res.status(401).json({ error: 'Current password is incorrect' });
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(new_password, salt);
+    await pool.query('UPDATE users SET password_hash = $1, updated_at = NOW() WHERE user_id = $2', [hashedPassword, userId]);
+    res.json({ message: 'Password updated successfully' });
+  } catch (error) {
+    next(error);
+  }
+});
+
 // GET /api/user-preferences - Get user preferences
 router.get('/preferences', verifyToken, async (req, res, next) => {
   try {
-    const userId = req.user.user_id;
+    const userId = req.user?.user_id ?? req.user?.id;
     const result = await pool.query(`
       SELECT 
         theme,
@@ -181,7 +202,7 @@ router.get('/preferences', verifyToken, async (req, res, next) => {
 // PUT /api/user-preferences - Update user preferences
 router.put('/preferences', verifyToken, async (req, res, next) => {
   try {
-    const userId = req.user.user_id;
+    const userId = req.user?.user_id ?? req.user?.id;
     const {
       theme,
       dashboard_layout,
@@ -221,7 +242,7 @@ router.put('/preferences', verifyToken, async (req, res, next) => {
 // GET /api/privacy-settings - Get privacy settings
 router.get('/privacy', verifyToken, async (req, res, next) => {
   try {
-    const userId = req.user.user_id;
+    const userId = req.user?.user_id ?? req.user?.id;
     const result = await pool.query(`
       SELECT 
         data_sharing,
@@ -263,7 +284,7 @@ router.get('/privacy', verifyToken, async (req, res, next) => {
 // PUT /api/privacy-settings - Update privacy settings
 router.put('/privacy', verifyToken, async (req, res, next) => {
   try {
-    const userId = req.user.user_id;
+    const userId = req.user?.user_id ?? req.user?.id;
     const {
       data_sharing,
       analytics_tracking,
@@ -351,7 +372,7 @@ router.delete('/account', verifyToken, async (req, res, next) => {
   const client = await pool.connect();
   
   try {
-    const userId = req.user.user_id;
+    const userId = req.user?.user_id ?? req.user?.id;
     
     await client.query('BEGIN');
 

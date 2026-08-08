@@ -66,11 +66,8 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 app.use("/api/transactions", transactionRoutes);
-app.use("/api/users", userRoutes);
-app.use('/api/budgets', budgetRoutes);
-app.use("/api/currencies", currenciesRoutes);
-app.use("/api/subscriptions", subscriptionRoutes);
 app.use('/api/users', settingsRouter);
+app.use("/api/users", userRoutes);
 app.use('/api/reports', reportsRouter);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/friend-loans", friendLoanRoutes);
