@@ -182,6 +182,10 @@ const SettingsPage = () => {
 
   const handlePasswordChange = async (e) => {
     e.preventDefault();
+    if (!securityData.current_password) {
+      toast.error("Please enter your current password!");
+      return;
+    }
     if (securityData.new_password !== securityData.confirm_password) {
       toast.error("New passwords do not match!");
       return;
@@ -191,11 +195,19 @@ const SettingsPage = () => {
       return;
     }
     setSaving(true);
-    setTimeout(() => {
-      setSaving(false);
-      setSecurityData(prev => ({ ...prev, current_password: "", new_password: "", confirm_password: "" }));
+    try {
+      await apiClient.put("/api/users/password", {
+        current_password: securityData.current_password,
+        new_password: securityData.new_password
+      });
+      setSecurityData({ current_password: "", new_password: "", confirm_password: "" });
       toast.success("🔐 Security credentials updated successfully!");
-    }, 1000);
+    } catch (err) {
+      const errorMsg = err.response?.data?.error || err.response?.data?.message || err.message || "Failed to update password";
+      toast.error(errorMsg);
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleAvatarClick = () => {
