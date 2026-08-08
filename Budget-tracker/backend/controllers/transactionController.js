@@ -22,7 +22,7 @@ export const addTransactionController = async (req, res, next) => {
       merchant,
       amount,
       category_id,
-      type,
+      type || "expense",
       transaction_date,
       description,
       currency || "INR"
