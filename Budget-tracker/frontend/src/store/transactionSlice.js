@@ -119,16 +119,20 @@ const transactionSlice = createSlice({
       })
       // addTransaction
       .addCase(addTransaction.fulfilled, (state, action) => {
-        // Re-fetch is triggered by the component after add, so no state change needed here
-        // But we can optimistically add if the response contains the new item
+        const item = action.payload?.transaction || action.payload;
+        if (item && item.amount) {
+          state.items.unshift(item);
+        }
       })
       // updateTransaction
       .addCase(updateTransaction.fulfilled, (state, action) => {
+        const updatedItem = action.payload?.data?.transaction || action.payload?.data;
+        const targetId = action.payload?.id;
         const idx = state.items.findIndex(
-          (t) => String(t.id) === String(action.payload.id)
+          (t) => String(t.transaction_id || t.id) === String(targetId)
         );
-        if (idx !== -1) {
-          state.items[idx] = { ...state.items[idx], ...action.payload.data };
+        if (idx !== -1 && updatedItem) {
+          state.items[idx] = { ...state.items[idx], ...updatedItem };
         }
       })
       // deleteTransaction

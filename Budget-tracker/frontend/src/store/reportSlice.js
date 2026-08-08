@@ -9,8 +9,8 @@ export const fetchReports = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const res = await apiClient.get("/api/reports");
-      const data = res.data.reports || res.data || [];
-      return Array.isArray(data) ? data : [];
+      const reportObj = res.data?.report || res.data?.reports || res.data;
+      return reportObj ? [reportObj] : [];
     } catch (err) {
       return rejectWithValue(err.response?.data?.message || err.message);
     }

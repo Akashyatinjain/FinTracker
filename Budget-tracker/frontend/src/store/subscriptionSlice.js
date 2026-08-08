@@ -95,6 +95,18 @@ const subscriptionSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       })
+      .addCase(addSubscription.fulfilled, (state, action) => {
+        const item = action.payload?.subscription || action.payload;
+        if (item) state.items.unshift(item);
+      })
+      .addCase(updateSubscription.fulfilled, (state, action) => {
+        const updated = action.payload?.data?.subscription || action.payload?.data;
+        const id = action.payload?.id;
+        const idx = state.items.findIndex(s => String(s.id) === String(id || updated?.id));
+        if (idx !== -1 && updated) {
+          state.items[idx] = { ...state.items[idx], ...updated };
+        }
+      })
       .addCase(deleteSubscription.fulfilled, (state, action) => {
         state.items = state.items.filter(
           (s) => String(s.id) !== String(action.payload)

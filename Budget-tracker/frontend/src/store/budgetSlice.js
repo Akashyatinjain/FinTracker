@@ -70,9 +70,13 @@ const budgetSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       })
+      .addCase(addBudget.fulfilled, (state, action) => {
+        const item = action.payload?.budget || action.payload;
+        if (item) state.items.unshift(item);
+      })
       .addCase(deleteBudget.fulfilled, (state, action) => {
         state.items = state.items.filter(
-          (b) => String(b.id) !== String(action.payload)
+          (b) => String(b.budget_id || b.id) !== String(action.payload)
         );
       });
   },
