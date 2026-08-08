@@ -7,7 +7,7 @@ const router = express.Router();
 
 router.get("/", verifyToken, async (req, res, next) => {
   try {
-    const userId = req.user.user_id;
+    const userId = req.user?.user_id ?? req.user?.id;
     const result = await pool.query(
       "SELECT * FROM budgets WHERE user_id=$1 ORDER BY month DESC",
       [userId]
@@ -20,7 +20,7 @@ router.get("/", verifyToken, async (req, res, next) => {
 
 router.post("/", verifyToken, async (req, res, next) => {
   try {
-    const userId = req.user.user_id;
+    const userId = req.user?.user_id ?? req.user?.id;
     const { category_id, amount, month, description } = req.body;
 
     const dup = await pool.query(
@@ -78,15 +78,23 @@ router.post("/", verifyToken, async (req, res, next) => {
 router.delete("/:id", verifyToken, async (req, res, next) => {
   try {
     const { id } = req.params;
-    const userId = req.user.user_id;
-    const result = await pool.query(
-      "DELETE FROM budgets WHERE id=$1 AND user_id=$2",
-      [id, userId]
-    );
+    const userId = req.user?.user_id ?? req.user?.id;
+    let result;
+    try {
+      result = await pool.query(
+        "DELETE FROM budgets WHERE budget_id=$1 AND user_id=$2 RETURNING *",
+        [id, userId]
+      );
+    } catch (err) {
+      result = await pool.query(
+        "DELETE FROM budgets WHERE id=$1 AND user_id=$2 RETURNING *",
+        [id, userId]
+      );
+    }
     if (result.rowCount === 0) {
       return res.status(404).json({ error: "Budget not found" });
     }
-    res.json({ msg: "Budget deleted" });
+    res.json({ msg: "Budget deleted", budget: result.rows[0] });
   } catch (err) {
     next(err);
   }
