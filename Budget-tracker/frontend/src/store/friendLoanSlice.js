@@ -85,16 +85,18 @@ const friendLoanSlice = createSlice({
         state.items.unshift(action.payload);
       })
       .addCase(updateFriendLoan.fulfilled, (state, action) => {
+        const payloadLoan = action.payload?.loan || action.payload;
+        const targetId = payloadLoan?.loan_id || payloadLoan?.id;
         const idx = state.items.findIndex(
-          (l) => String(l.loan_id) === String(action.payload.loan_id)
+          (l) => String(l.loan_id || l.id) === String(targetId)
         );
-        if (idx !== -1) {
-          state.items[idx] = action.payload;
+        if (idx !== -1 && payloadLoan) {
+          state.items[idx] = payloadLoan;
         }
       })
       .addCase(deleteFriendLoan.fulfilled, (state, action) => {
         state.items = state.items.filter(
-          (l) => String(l.loan_id) !== String(action.payload)
+          (l) => String(l.loan_id || l.id) !== String(action.payload)
         );
       });
   },
